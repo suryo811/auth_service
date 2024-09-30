@@ -2,6 +2,7 @@ import User from "../models/userModel.js"
 import AppError from '../utils/appError.js'
 import asyncHandler from "../utils/asyncHandler.js"
 import jwt from 'jsonwebtoken'
+import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js"
 
 const register = asyncHandler(async (req, res, next) => {
     const { email, password } = req.body;
@@ -36,8 +37,25 @@ const login = asyncHandler(async (req, res, next) => {
     }
 
     //token generation
+    const accessToken = generateAccessToken({ userId: user._id, role: user.role })
+    const refreshToken = generateRefreshToken({ userId: user._id })
 
-    res.status(200).json({ user })
+    user.refreshToken = refreshToken;
+    await user.save()
+
+    res
+        .status(200)
+        .cookie('accessToken', accessToken, {
+            httpOnly: true,
+            maxAge: process.env.ACCESS_TOKEN_COOKIE_MAX_AGE,
+            secure: process.env.SECURE_COOKIE,
+        })
+        .cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            maxAge: process.env.REFRESH_TOKEN_COOKIE_MAX_AGE,
+            secure: process.env.SECURE_COOKIE,
+        })
+        .json({ email: user.email, accessToken: accessToken, refreshToken: user.refreshToken })
 
 
 })

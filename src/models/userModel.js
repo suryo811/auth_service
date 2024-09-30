@@ -25,12 +25,19 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: 'user',
         lowercase: true,
+    },
+
+    refreshToken: {
+        type: String,
     }
 
+}, {
+    timestamps: true
 })
 
 //pre-save hook
 userSchema.pre('save', async function () {
+    if (!this.isModified('password')) return;
     this.password = await bcrypt.hash(this.password, 10)
 })
 
