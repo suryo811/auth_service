@@ -4,13 +4,15 @@ dotenv.config()
 import connectDB from './utils/db.js'
 import AppError from './utils/appError.js'
 import errorHandlerMiddleware from './middleware/errorHandlerMiddleware.js'
-import asyncHandler from './utils/asyncHandler.js'
+import authRouter from './routes/authRoute.js'
 
 
 const app = express();
 
+app.use(express.json());
 
-
+//route-middlewares
+app.use("/api/v1/auth", authRouter);
 
 app.all("*", (req, _, next) => {
     throw new AppError(`Can't find ${req.originalUrl} on this server`, 404)
