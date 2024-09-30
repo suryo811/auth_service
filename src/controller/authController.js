@@ -45,33 +45,46 @@ const login = asyncHandler(async (req, res, next) => {
 
     res
         .status(200)
-        .cookie('accessToken', accessToken, {
-            httpOnly: true,
-            maxAge: process.env.ACCESS_TOKEN_COOKIE_MAX_AGE,
-            secure: process.env.SECURE_COOKIE,
-        })
-        .cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            maxAge: process.env.REFRESH_TOKEN_COOKIE_MAX_AGE,
-            secure: process.env.SECURE_COOKIE,
-        })
+
         .json({ email: user.email, accessToken: accessToken, refreshToken: user.refreshToken })
 
 })
 
-const logout = asyncHandler(async (req, res, next) => {
-    res
-        .clearCookie('accessToken', {
-            httpOnly: true,
-            secure: process.env.SECURE_COOKIE
-        })
-        .clearCookie('refreshToken', {
-            httpOnly: true,
-            secure: process.env.SECURE_COOKIE
-        })
-        .sendStatus(200)
+const verifyAccessToken = asyncHandler(async (req, res, next) => {
+    const accessToken = req.header("Authorization")?.replace("Bearer ", "");
+
+    if (!accessToken) {
+        return res.status(401).json({
+            valid: false,
+            message: 'Invalid authentication: No token provided'
+        });
+    }
+
+    try {
+        const { userId, role } = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+        // Send success response with user data
+        return res.status(200).json({
+            valid: true,
+            data: { userId, role }
+        });
+
+    } catch (error) {
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({
+                valid: false,
+                message: 'Token has expired',
+                expiredAt: error.expiredAt // Provide when the token expired
+            });
+        }
+    }
+
+    // For any other error (invalid token, etc.)
+    return res.status(401).json({
+        valid: false,
+        message: 'Invalid authentication: Invalid token'
+    });
 })
 
 
-export { register, login, logout }
+export { register, login, verifyAccessToken }
 
