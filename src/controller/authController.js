@@ -57,9 +57,21 @@ const login = asyncHandler(async (req, res, next) => {
         })
         .json({ email: user.email, accessToken: accessToken, refreshToken: user.refreshToken })
 
+})
 
+const logout = asyncHandler(async (req, res, next) => {
+    res
+        .clearCookie('accessToken', {
+            httpOnly: true,
+            secure: process.env.SECURE_COOKIE
+        })
+        .clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: process.env.SECURE_COOKIE
+        })
+        .sendStatus(200)
 })
 
 
-export { register, login }
+export { register, login, logout }
 
