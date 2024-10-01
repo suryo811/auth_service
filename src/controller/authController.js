@@ -1,8 +1,8 @@
-import User from "../models/userModel.js"
+import User from '../models/userModel.js'
 import AppError from '../utils/appError.js'
-import asyncHandler from "../utils/asyncHandler.js"
+import asyncHandler from '../utils/asyncHandler.js'
 import jwt from 'jsonwebtoken'
-import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js"
+import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js'
 
 const register = asyncHandler(async (req, res, next) => {
     const { email, password } = req.body;
@@ -45,7 +45,6 @@ const login = asyncHandler(async (req, res, next) => {
 
     res
         .status(200)
-
         .json({ email: user.email, accessToken: accessToken, refreshToken: user.refreshToken })
 
 })
@@ -54,10 +53,7 @@ const verifyAccessToken = asyncHandler(async (req, res, next) => {
     const accessToken = req.header("Authorization")?.replace("Bearer ", "");
 
     if (!accessToken) {
-        return res.status(401).json({
-            valid: false,
-            message: 'Invalid authentication: No token provided'
-        });
+        throw new AppError('Invalid authentication: No token provided', 400);
     }
 
     try {
@@ -70,21 +66,51 @@ const verifyAccessToken = asyncHandler(async (req, res, next) => {
 
     } catch (error) {
         if (error.name === 'TokenExpiredError') {
-            return res.status(401).json({
-                valid: false,
-                message: 'Token has expired',
-                expiredAt: error.expiredAt // Provide when the token expired
-            });
+            throw new AppError('Token expired', 401)
         }
+        // For any other error (invalid token, etc.)
+        throw new AppError('Invalid authentication: Invalid token', 401)
     }
 
-    // For any other error (invalid token, etc.)
-    return res.status(401).json({
-        valid: false,
-        message: 'Invalid authentication: Invalid token'
-    });
 })
 
 
-export { register, login, verifyAccessToken }
+const refreshAccessToken = asyncHandler(async (req, res, next) => {
+    const incomingRefreshToken = req.header("Authorization")?.replace("Bearer ", "");
+
+    if (!incomingRefreshToken) {
+        throw new AppError('Invalid authentication: No token provided', 400);
+    }
+
+    try {
+        const { userId } = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+        const user = await User.findById(userId);
+
+        if (!user) {
+            throw new AppError("Invalid refresh token", 401)
+        }
+
+        //check if incoming refresh token is used
+        //If it is used, then replace it with a new one
+        if (incomingRefreshToken !== user?.refreshToken) {
+            throw new AppError("Refresh token is expired or used", 401) //prompt re-login
+        }
+
+        // Generate new access and refresh token
+        const newAccessToken = generateAccessToken({ userId: user._id, role: user.role })
+        const newRefreshToken = generateRefreshToken({ userId: user._id })
+
+        // Update the user's refresh token in the database
+        user.refreshToken = newRefreshToken;
+        await user.save();
+
+        return res.status(200).json({ msg: 'Access token refreshed successfully', accessToken: newAccessToken, refreshToken: newRefreshToken, })
+
+    } catch (error) {
+        throw new AppError('Invalid refresh token', 401);
+    }
+
+})
+
+export { register, login, verifyAccessToken, refreshAccessToken }
 
