@@ -139,7 +139,6 @@ const forgotPasswordRequest = asyncHandler(async (req, res, next) => {
 
     //send email with password reset link
     await sendResetPasswordMail({
-        name: user.username,
         email: user.email,
         token: passwordToken,
         origin: process.env.FRONTEND_EMAIL_ORIGIN

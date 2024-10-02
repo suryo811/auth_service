@@ -1,4 +1,6 @@
 import nodemailer from 'nodemailer'
+import dotenv from 'dotenv'
+dotenv.config();
 
 // Create a nodemailer transporter instance which is responsible to send a mail
 const transporter = nodemailer.createTransport({
@@ -19,7 +21,7 @@ async function mail({ to, subject, html }) {
         subject,
         html
     });
+    console.log("Message sent: %s", info.messageId);
 }
 
-//console.log("Message sent: %s", info.messag
 export default mail
