@@ -1,5 +1,7 @@
 # Authentication and Authorization Microservice
 
+Note: This project is currently a work in progress and may contain bugs.
+
 This microservice is designed for user authentication and authorization using Node.js, JWT (JSON Web Tokens), and MongoDB. It supports access and refresh tokens, as well as token rotation to enhance security.
 
 ## Features
@@ -43,7 +45,7 @@ This microservice is designed for user authentication and authorization using No
   }
   ```
 
-  #### Login
+#### Login
 
 - **POST** `/api/v1/auth/login`
 - **Body**:
@@ -63,7 +65,7 @@ This microservice is designed for user authentication and authorization using No
   }
   ```
 
-  #### Validate Token
+#### Validate Token
 
 - **POST** `/api/v1/auth/validate-token`
 - **HEADERS: Authorization: Bearer {token}**
@@ -80,7 +82,7 @@ This microservice is designed for user authentication and authorization using No
   }
   ```
 
-  #### Refresh Token
+#### Refresh Token
 
 - **POST** `/api/v1/auth/refresh-token`
 - **HEADERS: Authorization: Bearer {token}**
