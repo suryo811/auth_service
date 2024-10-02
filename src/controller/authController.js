@@ -1,6 +1,9 @@
 import User from '../models/userModel.js'
 import AppError from '../utils/appError.js'
+import crypto from 'crypto';
+import hashString from '../utils/createHash.js';
 import asyncHandler from '../utils/asyncHandler.js'
+import sendResetPasswordMail from '../../services/sendResetPasswordMail.js';
 import jwt from 'jsonwebtoken'
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js'
 
@@ -112,5 +115,38 @@ const refreshAccessToken = asyncHandler(async (req, res, next) => {
 
 })
 
-export { register, login, verifyAccessToken, refreshAccessToken }
+const forgotPasswordRequest = asyncHandler(async (req, res, next) => {
+    const { email } = req.body;
+
+    if (!email) {
+        throw new AppError('please provide valid email', 400)
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        throw new AppError("User does not exists", 404);
+    }
+
+    // generate a temporary token
+    const passwordToken = crypto.randomBytes(50).toString('hex');
+
+    // save hashed version of token and expiry to db
+    user.forgotPasswordToken = hashString(passwordToken);
+    user.forgotPasswordExpiry = new Date(Date.now() + 10 * 60 * 1000) //add ten minutes
+
+    await user.save()
+
+    //send email with password reset link
+    await sendResetPasswordMail({
+        name: user.username,
+        email: user.email,
+        token: passwordToken,
+        origin: process.env.FRONTEND_EMAIL_ORIGIN
+    });
+    res.status(200).json({ msg: 'please check your email for password reset link' })
+
+})
+
+export { register, login, verifyAccessToken, refreshAccessToken, forgotPasswordRequest }
 
