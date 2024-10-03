@@ -96,12 +96,6 @@ This microservice is designed for user authentication and authorization using No
   }
   ```
 
-## Sequence Diagram
-
-The following sequence diagram demonstrates the process of authentication, centralized JWT validation with an example product service.
-
-![Authentication Sequence Diagram](diagram.png)
-
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a pull request or open an issue to discuss improvements.
