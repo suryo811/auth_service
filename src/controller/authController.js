@@ -147,5 +147,35 @@ const forgotPasswordRequest = asyncHandler(async (req, res, next) => {
 
 })
 
-export { register, login, verifyAccessToken, refreshAccessToken, forgotPasswordRequest }
+const resetPassword = asyncHandler(async (req, res, next) => {
+    //password here is new password
+    const { token, email, password } = req.body;
+
+    if (!token || !email || !password) {
+        throw new AppError(`Please provide all the values`, 400)
+    }
+
+    const user = await User.findOne({ email });
+
+    if (user) {
+        const currentDate = new Date()
+
+        if (user.forgotPasswordToken === hashString(token) && user.
+            forgotPasswordExpiry > currentDate) {
+            user.password = password;
+            user.forgotPasswordToken = null;
+            user.
+                forgotPasswordExpiry = null;
+            await user.save();
+
+            return res.status(200).json({ msg: 'success! password reset done' })
+        }
+
+    }
+
+    res.status(500).json({ msg: 'some error occured, start again!' })
+})
+
+
+export { register, login, verifyAccessToken, refreshAccessToken, forgotPasswordRequest, resetPassword }
 
